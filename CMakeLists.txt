@@ -3,24 +3,41 @@ cmake_minimum_required(VERSION 3.13)
 
 project(cmake_discord_game_sdk VERSION 0.1)
 
-# Discord Game SDK version
-set(CMAKE_DISCORD_GAME_SDK_V_MAJOR 2)
-set(CMAKE_DISCORD_GAME_SDK_V_MINOR 5)
-set(CMAKE_DISCORD_GAME_SDK_V_BUILD 6)
+# `OS` must be specified. Contains your current operating system.
+if (NOT OS)
+    message(FATAL_ERROR "OS not defined. Please choose among one of them: Windows|Linux|Macos")
+endif ()
 
-# Include directory target name
+# `ARCH` contains your current processor architecture.
+if (NOT ARCH)
+    message(WARNING "ARCH not defined, automatically set to x64")
+    set(ARCH x86_64)
+endif ()
+
+# `ARCH` can be x86 only on Windows
+if (ARCH STREQUAL "x86" AND NOT OS STREQUAL "Windows")
+    message(FATAL_ERROR "x86 is only possible on Windows")
+endif ()
+
+### Configuration target (definitions + include dir)
 set(CMAKE_DISCORD_GAME_SDK_CONFIG_TARGET_NAME ${PROJECT_NAME}_config)
 
-# 64-bit target name
-set(CMAKE_DISCORD_GAME_SDK_X64_TARGET_NAME ${PROJECT_NAME}_64)
-
-# 32-bit target name
-set(CMAKE_DISCORD_GAME_SDK_X86_TARGET_NAME ${PROJECT_NAME}_86)
-
-# Include directory
 set(CMAKE_DISCORD_GAME_SDK_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/c;${CMAKE_CURRENT_SOURCE_DIR}/cpp)
 
-# Sources
+# Discord Game SDK version
+set(DISCORD_GAME_SDK_V_MAJOR 2)
+set(DISCORD_GAME_SDK_V_MINOR 5)
+set(DISCORD_GAME_SDK_V_BUILD 6)
+
+add_library(${CMAKE_DISCORD_GAME_SDK_CONFIG_TARGET_NAME} INTERFACE)
+target_include_directories(${CMAKE_DISCORD_GAME_SDK_CONFIG_TARGET_NAME}
+    INTERFACE ${CMAKE_DISCORD_GAME_SDK_INCLUDE_DIR})
+set_target_properties(${CMAKE_DISCORD_GAME_SDK_CONFIG_TARGET_NAME} PROPERTIES INTERFACE_COMPILE_DEFINITIONS
+    CMAKE_DISCORD_GAME_SDK_VERSION="${DISCORD_GAME_SDK_V_MAJOR}.${DISCORD_GAME_SDK_V_MINOR}.${DISCORD_GAME_SDK_V_BUILD}")
+
+### Library target
+set(CMAKE_DISCORD_GAME_SDK_TARGET_NAME ${PROJECT_NAME})
+
 set(CMAKE_DISCORD_GAME_SDK_SOURCES
     cpp/achievement_manager.cpp
     cpp/activity_manager.cpp
@@ -37,37 +54,27 @@ set(CMAKE_DISCORD_GAME_SDK_SOURCES
     cpp/user_manager.cpp
     cpp/voice_manager.cpp)
 
-# 64-bit lib path
-set(CMAKE_DISCORD_GAME_SDK_X64_LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib/x86_64/discord_game_sdk.dll.lib)
+if (OS STREQUAL "Windows")
+    if (ARCH STREQUAL "x86_64")
+        set(CMAKE_DISCORD_GAME_SDK_LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib/x86_64/discord_game_sdk.dll.lib)
+    else ()
+        set(CMAKE_DISCORD_GAME_SDK_LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib/x86/discord_game_sdk.dll.lib)
+    endif ()
+elseif (OS STREQUAL "Linux")
+    set(CMAKE_DISCORD_GAME_SDK_LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib/x86_64/discord_game_sdk.so)
+elseif (OS STREQUAL "Macos")
+    set(CMAKE_DISCORD_GAME_SDK_LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib/x86_64/discord_game_sdk.dylib)
+endif ()
 
-# 32-bit lib path
-set(CMAKE_DISCORD_GAME_SDK_X64_LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib/x86/discord_game_sdk.dll.lib)
+add_library(${CMAKE_DISCORD_GAME_SDK_TARGET_NAME} STATIC ${CMAKE_DISCORD_GAME_SDK_SOURCES})
 
-##### Include directory target
-add_library(${CMAKE_DISCORD_GAME_SDK_CONFIG_TARGET_NAME} INTERFACE)
-target_include_directories(${CMAKE_DISCORD_GAME_SDK_CONFIG_TARGET_NAME}
-    INTERFACE ${CMAKE_DISCORD_GAME_SDK_INCLUDE_DIR})
-set_target_properties(${CMAKE_DISCORD_GAME_SDK_CONFIG_TARGET_NAME} PROPERTIES
-    INTERFACE_COMPILE_DEFINITIONS
-    CMAKE_DISCORD_GAME_SDK_VERSION="${CMAKE_DISCORD_GAME_SDK_V_MAJOR}.${CMAKE_DISCORD_GAME_SDK_V_MINOR}.${CMAKE_DISCORD_GAME_SDK_V_BUILD}")
+target_link_libraries(${CMAKE_DISCORD_GAME_SDK_TARGET_NAME}
+    PUBLIC ${CMAKE_DISCORD_GAME_SDK_CONFIG_TARGET_NAME} ${CMAKE_DISCORD_GAME_SDK_LIB_PATH})
 
-##### 64-bit target
-add_library(${CMAKE_DISCORD_GAME_SDK_X64_TARGET_NAME} STATIC ${CMAKE_DISCORD_GAME_SDK_SOURCES})
-target_link_libraries(${CMAKE_DISCORD_GAME_SDK_X64_TARGET_NAME}
-    PUBLIC  ${CMAKE_DISCORD_GAME_SDK_CONFIG_TARGET_NAME}
-    PRIVATE ${CMAKE_DISCORD_GAME_SDK_X64_LIB_PATH})
-target_include_directories(${CMAKE_DISCORD_GAME_SDK_X64_TARGET_NAME} PUBLIC ${CMAKE_DISCORD_GAME_SDK_INCLUDE_DIR})
 
-##### 32-bit target
-add_library(${CMAKE_DISCORD_GAME_SDK_X86_TARGET_NAME} STATIC ${CMAKE_DISCORD_GAME_SDK_SOURCES})
-target_link_libraries(${CMAKE_DISCORD_GAME_SDK_X86_TARGET_NAME}
-    PUBLIC  ${CMAKE_DISCORD_GAME_SDK_CONFIG_TARGET_NAME}
-    PRIVATE ${CMAKE_DISCORD_GAME_SDK_X86_LIB_PATH})
-target_include_directories(${CMAKE_DISCORD_GAME_SDK_X86_TARGET_NAME} PUBLIC ${CMAKE_DISCORD_GAME_SDK_INCLUDE_DIR})
-
-##### Unit tests
+### Unit tests target
 set(CMAKE_DISCORD_GAME_SDK_UNIT_TESTS_TARGET_NAME ${PROJECT_NAME}_tests)
 set(CMAKE_DISCORD_GAME_SDK_UNIT_TESTS_SOURCES
     tests/main.cpp)
 add_executable(${CMAKE_DISCORD_GAME_SDK_UNIT_TESTS_TARGET_NAME} ${CMAKE_DISCORD_GAME_SDK_UNIT_TESTS_SOURCES})
-target_link_libraries(${CMAKE_DISCORD_GAME_SDK_UNIT_TESTS_TARGET_NAME} ${CMAKE_DISCORD_GAME_SDK_X64_TARGET_NAME})
+target_link_libraries(${CMAKE_DISCORD_GAME_SDK_UNIT_TESTS_TARGET_NAME} ${CMAKE_DISCORD_GAME_SDK_TARGET_NAME})

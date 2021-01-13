@@ -1,7 +1,7 @@
 //! std
-#undef NDEBUG
-#include <assert.h>
 #include <string>
+#undef NDEBUG
+#include <cassert>
 
 inline void test_version_defs()
 {
