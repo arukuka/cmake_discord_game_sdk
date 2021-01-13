@@ -3,9 +3,18 @@ cmake_minimum_required(VERSION 3.13)
 
 project(cmake_discord_game_sdk VERSION 0.1)
 
-# `OS` must be specified. Contains your current operating system.
+# `OS` contains your current operating system.
 if (NOT OS)
-    message(FATAL_ERROR "OS not defined. Please choose among one of them: Windows|Linux|Macos")
+    if (WIN32)
+        set(OS Windows)
+    elseif (APPLE)
+        set(OS Macos)
+    elseif (UNIX)
+        set(OS Linux)
+    else ()
+        message(FATAL_ERROR "Cannot detect operating system")
+    endif ()
+    message(STATUS "OS was not defined, automatically set to ${OS}")
 endif ()
 
 # `ARCH` contains your current processor architecture.
