@@ -3,6 +3,8 @@
 This project aims to make easier integration of the Discord Game SDK 
 in your projects that use CMake as main buildsystem.
 
+### Currently supported SDK version: 2.5.6
+
 ## How to build
 
 ```
