@@ -1,4 +1,4 @@
-# discord_game_sdk with CMake buildsystem
+# Discord Game SDK with CMake buildsystem
 
 This project aims to make easier integration of the Discord Game SDK 
 in your projects that use CMake as main buildsystem.
